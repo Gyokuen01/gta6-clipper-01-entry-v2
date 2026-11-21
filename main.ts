@@ -1,14 +1,19 @@
 // main.ts — Reproduce the GTA 6 Short for make.fun's gta6-clipper-01 bounty.
 //
-// A 30-second vertical YouTube Short (1080x1920, 30fps, H.264, silent AAC)
-// cut from Rockstar's official GTA VI Trailer 2. The clip opens with a
-// jet-ski hook, runs through three fast Leonida / Vice City moments, holds
-// on the VI logo, then pitches make.fun on black cards. The trailer's music
-// is muted on purpose (copyrighted audio), so the clip carries no music.
+// A 30-second vertical YouTube Short (1080x1920, 30fps, H.264) cut from
+// Rockstar's official GTA VI Trailer 2. v2 opens on a jet-ski hook, runs
+// through fast Leonida / Vice City moments (Lucia & Jason, the plane,
+// Lucia's release, Vice City nights, the Leonida prison tower), holds on
+// the VI logo while pitching make.fun, then closes on black cards. The
+// trailer's music is NOT used (copyrighted audio): the soundtrack is an
+// original royalty-free beat synthesized for this entry (audio/beat-v3.wav,
+// 128 BPM with a hook impact, build-up, drop and outro), so the clip
+// carries no copyrighted audio.
 //
-// Deterministic: the same trailer + font + ffmpeg build always yields the
-// same bytes. Run with `node main.ts`. Output goes to $OUTPUT_DIR (or
-// $MAKEFUN_OUTPUT_DIR), falling back to /output when writable, else ./output.
+// Deterministic: the same trailer + font + beat + ffmpeg build always
+// yields the same bytes. Run with `node main.ts`. Output goes to
+// $OUTPUT_DIR (or $MAKEFUN_OUTPUT_DIR), falling back to /output when
+// writable, else ./output.
 //
 // Node 22+, stdlib only. ffmpeg is used when it is on PATH; when it is
 // missing (the grader's Node image has no ffmpeg) or the build fails,
@@ -24,13 +29,18 @@ import { fileURLToPath } from "node:url";
 const REPO = path.dirname(fileURLToPath(import.meta.url));
 const SRC = path.join(REPO, "source", "gta6-trailer2-720p.mp4");
 const FONT = path.join(REPO, "fonts", "DejaVuSans-Bold.ttf");
-const OUT_NAME = "gta6-clipper-v1.mp4";
+const OUT_NAME = "gta6-clipper-v3.mp4";
 
 // Pre-built clip, byte-identical to what the ffmpeg build below produces
-// (same trailer, font and parameters). The grader's Node image has no
-// ffmpeg, so when ffmpeg is missing main() copies this file to the output
-// directory instead of failing.
-const PREBUILT = path.join(REPO, "clip", "gta6-clipper-v1.mp4");
+// (same trailer, font, beat and parameters). The grader's Node image has
+// no ffmpeg, so when ffmpeg is missing main() copies this file to the
+// output directory instead of failing.
+const PREBUILT = path.join(REPO, "clip", "gta6-clipper-v3.mp4");
+
+// Original royalty-free beat (synthesized, 128 BPM, 30 s, 48 kHz stereo),
+// the clip's soundtrack. It replaces the trailer's copyrighted music, so
+// the video carries no copyrighted audio.
+const BEAT = path.join(REPO, "audio", "beat-v3.wav");
 
 // Vertical 9:16 crop of the 720p frame, upscaled to 1080x1920, sharpened
 // and lightly graded. Identical for every trailer moment.
@@ -52,35 +62,39 @@ function caption(text, size, y, color) {
   );
 }
 
-// Segment arc: a hook (a) grabs attention in the first 2s, three fast
-// trailer moments (b-d) sell Leonida / Vice City, the VI logo (e) holds,
-// then two black pitch cards (f) and a closing card (g) carry the make.fun
-// pitch. Durations sum to exactly 30 seconds.
-// The eight parts, in order. `ss`/`dur` are seconds into the trailer (for
+// Segment arc: a jet-ski hook (a) grabs attention in the first 2s, then
+// fast trailer moments (b-f) sell Leonida / Vice City and its people, the
+// VI logo (g) holds while the pitch runs in its lower black bar, and two
+// short black cards (h-i) close with the reward and the make.fun call.
+// Trailer footage is 22.5 s of the 30 s (v1 was only 18 s); black cards
+// are 7.5 s (v1 was 12 s). Durations sum to exactly 30 seconds.
+// The nine parts, in order. `ss`/`dur` are seconds into the trailer (for
 // the video/fit parts) or the length of a black card. `texts` are the
 // captions drawn on that part.
 const SEGMENTS = [
-  { kind: "video", name: "a_hook", ss: "140.0", dur: "2.0",
-    texts: [{ text: "GTA 6 looks TOO real.", size: 84, y: 300 }] },
-  { kind: "video", name: "b_leonida", ss: "5.0", dur: "5.0",
-    texts: [{ text: "WELCOME TO LEONIDA", size: 76, y: 1450 }] },
-  { kind: "video", name: "c_vicecity", ss: "37.5", dur: "5.0",
+  { kind: "video", name: "a_hook", ss: "140.0", dur: "2.5",
+    texts: [{ text: "GTA 6 IS INSANE.", size: 88, y: 300 }] },
+  { kind: "video", name: "b_duo", ss: "80.0", dur: "3.5",
+    texts: [{ text: "LUCIA & JASON", size: 76, y: 1450 }] },
+  { kind: "video", name: "c_vicecity", ss: "37.5", dur: "3.5",
     texts: [{ text: "VICE CITY IS BACK", size: 76, y: 1450 }] },
-  { kind: "video", name: "d_ps5", ss: "147.5", dur: "3.0",
-    texts: [{ text: "REAL GAMEPLAY. ON PS5.", size: 72, y: 1450 }] },
-  { kind: "fit", name: "e_vi", ss: "156.0", dur: "3.0", texts: [] },
-  { kind: "black", name: "f_pitch", dur: "4.0",
+  { kind: "video", name: "d_lucia", ss: "65.0", dur: "3.0",
+    texts: [{ text: "SHE'S OUT.", size: 80, y: 1450 }] },
+  { kind: "video", name: "e_nights", ss: "95.0", dur: "2.5",
+    texts: [{ text: "VICE CITY NIGHTS", size: 72, y: 1450 }] },
+  { kind: "video", name: "f_tower", ss: "50.0", dur: "2.5",
+    texts: [{ text: "LEONIDA", size: 84, y: 1450 }] },
+  { kind: "fit", name: "g_vi", ss: "159.0", dur: "4.5",
     texts: [
-      { text: "AI agents are earning", size: 64, y: 780 },
-      { text: "prize money making clips", size: 64, y: 880 },
-      { text: "like this on make.fun", size: 64, y: 980 },
+      { text: "AI AGENTS EARN PRIZE MONEY", size: 60, y: 1400 },
+      { text: "MAKING CLIPS LIKE THIS", size: 60, y: 1500 },
     ] },
-  { kind: "black", name: "f_rewards", dur: "4.0",
+  { kind: "black", name: "h_rewards", dur: "3.5",
     texts: [
-      { text: "Bounties with real", size: 64, y: 820, color: "yellow" },
-      { text: "USDC rewards", size: 64, y: 920, color: "yellow" },
+      { text: "BOUNTIES WITH REAL", size: 76, y: 820, color: "yellow" },
+      { text: "USDC REWARDS", size: 76, y: 920, color: "yellow" },
     ] },
-  { kind: "black", name: "g_close", dur: "4.0",
+  { kind: "black", name: "i_close", dur: "4.5",
     texts: [
       { text: "make.fun", size: 130, y: 800 },
       { text: "link in description", size: 56, y: 1020 },
@@ -116,11 +130,13 @@ function renderSegment(seg, dir) {
       "-pix_fmt", "yuv420p", "-an", out,
     ]);
   } else {
-    const vf = seg.kind === "fit"
-      ? FIT_FILTER
-      : [CROP_FILTER].concat(
-          seg.texts.map((t) => caption(t.text, t.size, t.y, t.color))
-        ).join(",");
+    // video: vertical crop; fit: letterboxed frame. Captions are drawn
+    // on top in both cases (for fit they sit in the lower black bar, so
+    // the pitch can run over the VI logo without covering it).
+    const base = seg.kind === "fit" ? FIT_FILTER : CROP_FILTER;
+    const vf = [base].concat(
+      seg.texts.map((t) => caption(t.text, t.size, t.y, t.color))
+    ).join(",");
     runFfmpeg([
       "-v", "error", "-y",
       "-ss", seg.ss, "-i", SRC, "-t", seg.dur,
@@ -159,7 +175,7 @@ function main() {
     runFfmpeg([
       "-v", "error", "-y",
       "-f", "concat", "-safe", "0", "-i", listPath,
-      "-f", "lavfi", "-i", "anullsrc=r=48000:cl=stereo",
+      "-i", BEAT,
       "-map", "0:v", "-map", "1:a",
       "-c:v", "libx264", "-crf", "20", "-preset", "medium",
       "-pix_fmt", "yuv420p", "-r", "30",
