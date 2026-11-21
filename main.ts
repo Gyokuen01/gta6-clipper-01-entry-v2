@@ -43,6 +43,10 @@ function caption(text, size, y, color) {
   );
 }
 
+// Segment arc: a hook (a) grabs attention in the first 2s, three fast
+// trailer moments (b-d) sell Leonida / Vice City, the VI logo (e) holds,
+// then two black pitch cards (f) and a closing card (g) carry the make.fun
+// pitch. Durations sum to exactly 30 seconds.
 // The eight parts, in order. `ss`/`dur` are seconds into the trailer (for
 // the video/fit parts) or the length of a black card. `texts` are the
 // captions drawn on that part.
@@ -112,6 +116,9 @@ function renderSegment(seg, dir) {
   return out;
 }
 
+// Output location: an explicit OUTPUT_DIR / MAKEFUN_OUTPUT_DIR wins, then
+// /output (the runner's conventional directory), else ./output next to the
+// repo so a local run never needs root. The file name is fixed either way.
 function resolveOutputDir() {
   const env = process.env.OUTPUT_DIR || process.env.MAKEFUN_OUTPUT_DIR;
   if (env) return env;
